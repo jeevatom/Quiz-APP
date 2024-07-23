@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Display</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        /* body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        } */
+        .question {
+            margin-bottom: 20px;
+        }
+        .question h3 {
+            margin: 0;
+        }
+        .options {
+            margin: 10px 0;
+        }
+        .option {
+            display: block;
+            margin: 5px 0;
+        }
+        .submit-btn {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        .submit-btn:hover {
+            background-color: #0056b3;
+        }
+        .answer {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #ff0000;
+        }
+        .score {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #09ff00;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">Quiz App</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="index.html">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="createQuiz.html">Create Quiz</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="deleteQuiz.html">Delete Quiz</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Quiz Display</h1>
+        <form id="quiz-form">
+            <label for="quiz-language">Enter Programming Language:</label>
+            <input type="text" id="quiz-language" name="quiz-language" required>
+            <button type="button" onclick="fetchQuestions()">Fetch Questions</button>
+        </form>
+        <div id="questions"></div>
+        <button class="submit-btn" onclick="showAnswers()" style="display: none;">Submit</button>
+        <div id="score" class="score" style="display: none;"></div>
+    </div>
+
+    <script>
+        let quizLanguage = null;
+        let questions = [];
+
+        async function fetchQuestions() {
+            quizLanguage = document.getElementById('quiz-language').value;
+            if (!quizLanguage) return;
+
+            try {
+                const response = await fetch(`http://localhost:8080/quiz/getByLanguage/${quizLanguage}`);
+                questions = await response.json();
+                displayQuestions(questions);
+                document.querySelector('.submit-btn').style.display = 'block';
+            } catch (error) {
+                console.error('Error fetching quiz questions:', error);
+            }
+        }
+
+        function displayQuestions(questions) {
+            const container = document.getElementById('questions');
+            container.innerHTML = ''; // Clear existing content
+
+            questions.forEach(question => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'question';
+
+                const questionHtml = `
+                    <h3>${question.question}</h3>
+                    <div class="options">
+                        <label class="option"><input type="radio" name="q${question.id}" value="${question.option1}"> ${question.option1}</label>
+                        <label class="option"><input type="radio" name="q${question.id}" value="${question.option2}"> ${question.option2}</label>
+                        <label class="option"><input type="radio" name="q${question.id}" value="${question.option3}"> ${question.option3}</label>
+                        <label class="option"><input type="radio" name="q${question.id}" value="${question.option4}"> ${question.option4}</label>
+                        <div class="answer" id="answer-${question.id}" style="display:none;"></div>
+                    </div>
+                `;
+                questionDiv.innerHTML = questionHtml;
+                container.appendChild(questionDiv);
+            });
+        }
+
+        function showAnswers() {
+            let score = 0;
+            const answers = document.querySelectorAll('.answer');
+
+            answers.forEach(answerDiv => {
+                const questionId = answerDiv.id.split('-')[1];
+                const selectedOption = document.querySelector(`input[name="q${questionId}"]:checked`);
+                const question = questions.find(q => q.id == questionId);
+
+                if (question && selectedOption && selectedOption.value === question.answer) {
+                    score++;
+                }
+
+                if (question) {
+                    answerDiv.textContent = `Correct answer: ${question.answer}`;
+                    answerDiv.style.display = 'block';
+                }
+            });
+
+            document.getElementById('score').textContent = `Your score: ${score} out of ${questions.length}`;
+            document.getElementById('score').style.display = 'block';
+        }
+    </script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
